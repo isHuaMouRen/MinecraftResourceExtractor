@@ -1,0 +1,46 @@
+name: 🔴 BUG 报告
+description: 程序报错或出现意料之外的情况
+title: "[Bug]: "
+labels: [🔴BUG]
+body:
+  - type: textarea
+    id: env
+    attributes:
+      label: 运行环境
+      description: 运行软件时的系统环境
+      placeholder: |
+        Windows10 x64
+        内存: 16GB
+        .NET Framework x.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 是如何出现此 bug 的
+      placeholder: |
+        1. 打开程序
+        2. 点击最小化按钮
+        3. 程序崩溃
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 操作本应发生什么
+      description: 做出操作后，本应发生什么
+      placeholder: 程序最小化
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 意料之外的结果
+      description: 做出操作后程序发生了什么意料之外的结果
+      placeholder: 程序崩溃
+    validations:
+      required: true
