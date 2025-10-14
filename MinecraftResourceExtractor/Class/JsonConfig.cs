@@ -7,7 +7,21 @@ namespace MinecraftResourceExtractor.Class
         {
             public class Root
             {
-                public string? MinecraftPath { get; set; }
+                public bool isFirstUse { get; set; }
+            }
+        }
+
+        public class IndexFile
+        {
+            public class Root
+            {
+                public Dictionary<string,JsonConfig.IndexFile.FileInfo>? objects { get; set; }
+            }
+
+            public class FileInfo
+            {
+                public string? hash { get; set; }
+                public long size { get; set; }
             }
         }
     }

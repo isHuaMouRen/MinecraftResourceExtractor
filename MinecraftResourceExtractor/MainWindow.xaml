@@ -7,7 +7,9 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         mc:Ignorable="d"
         Title="Minecraft散列资源提取器" Height="450" Width="800"
-        ui:WindowHelper.UseModernWindowStyle="True" WindowStartupLocation="CenterScreen">
+        ui:WindowHelper.UseModernWindowStyle="True"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded" Icon="Assets/icon.ico">
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
@@ -37,11 +39,40 @@
                 Margin="5,10,0,0"
                 Click="button_minecraftPath_Broswer_Click"/>
 
-        
-        <Border BorderBrush="#FF666666"
+
+        <Border x:Name="border_Main" BorderBrush="#FF666666"
                 BorderThickness="1"
                 CornerRadius="5"
                 Grid.ColumnSpan="3"
-                Margin="0,47,0,0"/>
+                Margin="0,47,0,0"
+                IsEnabled="False">
+            <Grid>
+                <TextBox x:Name="textBox_Search" TextWrapping="Wrap" Margin="9,9,0,0" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top" Width="380"/>
+                <Button x:Name="button_Search" Content="搜索" Margin="394,10,0,0" VerticalAlignment="Top" Height="32" Width="88" Click="button_Search_Click"/>
+                <TreeView x:Name="treeView_Main" Margin="10,47,0,10" HorizontalAlignment="Left" Width="472" SelectedItemChanged="treeView_Main_SelectedItemChanged">
+                    <TreeViewItem Header="Root1">
+                        <TreeViewItem Header="Item1"/>
+                    </TreeViewItem>
+                </TreeView>
+                <Border BorderBrush="#FF666666" BorderThickness="1" Margin="487,10,10,10" CornerRadius="5">
+                    <Grid>
+                        <Label x:Name="label_FileTitle" Content="Title" Margin="10,10,10,0" VerticalAlignment="Top" Height="30" FontSize="25" FontWeight="Bold"/>
+                        <Label x:Name="label_FilePath" Content="Path" Margin="10,45,10,0" VerticalAlignment="Top"/>
+                        <Label x:Name="label_FileSize" Content="文件大小: Size" Margin="10,68,10,0" VerticalAlignment="Top"/>
+                        <Border BorderBrush="#FF666666" BorderThickness="1" CornerRadius="5" Margin="12,90,12,46">
+                            <Grid>
+                                <Label x:Name="label_PreviewError" Content="不支持的预览格式" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                                <Image x:Name="image_Preview" Visibility="Hidden"/>
+                                <TextBox x:Name="textBox_Preview" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Visibility="Hidden"/>
+                            </Grid>
+                        </Border>
+                        <Button x:Name="button_Extractor" Content="导出" Margin="10,285,10,10" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Click="button_Extractor_Click"/>
+
+
+                    </Grid>
+                </Border>
+
+            </Grid>
+        </Border>
     </Grid>
 </Window>
