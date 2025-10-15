@@ -31,6 +31,8 @@ using ToolLib.Library.KeyboardHookLib;
 using ToolLib.Library.LogLib;
 using ToolLib.Library.MemoryLib;
 using static MinecraftResourceExtractor.Class.JsonConfig;
+using NAudio.Vorbis;
+using NAudio.Wave;
 
 namespace MinecraftResourceExtractor
 {
@@ -103,47 +105,86 @@ namespace MinecraftResourceExtractor
             catch (Exception ex)
             {
                 border_Main.IsEnabled = false;
-                ErrorReportBox.Show("致命错误", $"在加载索引列表时发生错误\n\n{ex.Message}", ex, true);
+                ErrorReportBox.Show("致命错误", $"在加载索引列表时发生错误，请选择正确的 .minecraft 文件夹\n\n{ex.Message}", ex, true);
             }
         }
 
-        public void LoadFileInfo(TreeViewItem item)
+        public async Task LoadFileInfoAsync(TreeViewItem item)
         {
             try
             {
+                // 停止之前的音频
+                if (_audioOutput != null)
+                {
+                    _audioOutput.Stop();
+                    _audioOutput.Dispose();
+                    _audioOutput = null;
+                }
+                if (_audioReader != null)
+                {
+                    _audioReader.Dispose();
+                    _audioReader = null;
+                }
+
                 label_FileTitle.Content = item.Header;
                 label_FilePath.Content = TreeViewControler.GetTreeItemPath(item);
+
                 if (item.Items.Count == 0)
                 {
                     label_FileSize.Content = $"文件大小: {Math.Round(IndexConfig.objects![(string)label_FilePath.Content].size / (1024.0 * 1024.0), 3)}MB";
+                    button_Extract.IsEnabled = true;
 
                     bool isLoadDone = false;
                     string filePath = label_FilePath.Content.ToString()!;
                     string hashFilePath = $"{minecraftPath}\\assets\\objects\\{IndexConfig.objects[(string)label_FilePath.Content].hash!.Substring(0, 2)}\\{IndexConfig.objects[(string)label_FilePath.Content].hash}";
 
-                    if (filePath.Substring(filePath.Length - 5) == ".json" || filePath.Substring(filePath.Length - 5) == ".lang" || filePath.Substring(filePath.Length - 7) == ".mcmeta")
+                    if (filePath.EndsWith(".json") || filePath.EndsWith(".lang") || filePath.EndsWith(".mcmeta"))
                     {
                         isLoadDone = true;
-
                         label_PreviewError.Visibility = Visibility.Hidden;
                         textBox_Preview.Visibility = Visibility.Visible;
                         image_Preview.Visibility = Visibility.Hidden;
 
-                        textBox_Preview.Text = $"{File.ReadAllText(hashFilePath)}";
+                        // 异步读取文本文件
+                        textBox_Preview.Text = await Task.Run(() => File.ReadAllText(hashFilePath));
                     }
-                    else if (filePath.Substring(filePath.Length - 4) == ".png")
+                    else if (filePath.EndsWith(".png"))
                     {
                         isLoadDone = true;
-
                         label_PreviewError.Visibility = Visibility.Hidden;
                         textBox_Preview.Visibility = Visibility.Hidden;
                         image_Preview.Visibility = Visibility.Visible;
 
-                        var bitmapSource = new BitmapImage();
-                        bitmapSource.BeginInit();
-                        bitmapSource.UriSource = new Uri($"{hashFilePath}", UriKind.Absolute);
-                        bitmapSource.EndInit();
+                        // 异步加载图片
+                        var bitmapSource = await Task.Run(() =>
+                        {
+                            var bmp = new BitmapImage();
+                            bmp.BeginInit();
+                            bmp.UriSource = new Uri(hashFilePath, UriKind.Absolute);
+                            bmp.CacheOption = BitmapCacheOption.OnLoad; // 防止文件被占用
+                            bmp.EndInit();
+                            bmp.Freeze(); // 跨线程访问
+                            return bmp;
+                        });
+
                         image_Preview.Source = bitmapSource;
+                    }
+                    else if (filePath.EndsWith(".ogg"))
+                    {
+                        isLoadDone = true;
+                        label_PreviewError.Visibility = Visibility.Visible;
+                        textBox_Preview.Visibility = Visibility.Hidden;
+                        image_Preview.Visibility = Visibility.Hidden;
+                        label_PreviewError.Content = $"正在播放\n{label_FilePath.Content}";
+
+                        // 异步创建音频播放实例
+                        await Task.Run(() =>
+                        {
+                            _audioReader = new VorbisWaveReader(hashFilePath);
+                            _audioOutput = new WaveOutEvent();
+                            _audioOutput.Init(_audioReader);
+                            _audioOutput.Play();
+                        });
                     }
 
                     if (!isLoadDone)
@@ -152,30 +193,31 @@ namespace MinecraftResourceExtractor
                         textBox_Preview.Visibility = Visibility.Hidden;
                         image_Preview.Visibility = Visibility.Hidden;
                     }
-
                 }
                 else
                 {
                     label_FileSize.Content = $"文件大小: 无";
-
                     label_PreviewError.Visibility = Visibility.Visible;
                     textBox_Preview.Visibility = Visibility.Hidden;
                     image_Preview.Visibility = Visibility.Hidden;
+                    button_Extract.IsEnabled = false;
+                    label_PreviewError.Content = $"不支持的预览格式";
                 }
-
-                
             }
             catch (Exception ex)
             {
                 ErrorReportBox.Show("发生错误", "加载文件信息时发生错误", ex);
             }
         }
+
         #endregion
 
         #region Class
         #endregion
 
         #region Obj
+        private WaveOutEvent? _audioOutput;
+        private VorbisWaveReader? _audioReader;
         #endregion
 
         #region Var
@@ -225,11 +267,11 @@ namespace MinecraftResourceExtractor
 
         private void treeView_Main_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            Dispatcher.BeginInvoke(() =>
+            Dispatcher.BeginInvoke(async () =>
             {
                 if (treeView_Main.SelectedItem is TreeViewItem item)
                 {
-                    LoadFileInfo(item);
+                    await LoadFileInfoAsync(item);
                 }
                 
             });
@@ -298,6 +340,92 @@ namespace MinecraftResourceExtractor
                 catch (Exception ex)
                 {
                     ErrorReportBox.Show("发生错误", "在尝试导出资源时发生错误", ex);
+                }
+            });
+        }
+
+        private void button_ExtractALL_Click(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    // 确认提示
+                    var isSaveDialog = new ContentDialog
+                    {
+                        Title = "提示",
+                        Content = "是否导出所有文件\n\n(注意: 此操作可能会导致程序看起来未响应，实际上程序在努力导出文件)",
+                        PrimaryButtonText = "是",
+                        CloseButtonText = "否",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+                    if (await isSaveDialog.ShowAsync() != ContentDialogResult.Primary)
+                        return;
+
+                    // 选择输出目录
+                    var dialog = new OpenFolderDialog { Title = "选择导出位置" };
+                    if (dialog.ShowDialog() != true) return;
+                    string outputFolder = dialog.FolderName;
+
+                    // 用于记录导出失败的文件
+                    List<string> failedFiles = new List<string>();
+
+                    // 递归函数：传入当前路径前缀
+                    void ExportItems(ItemCollection items, string parentPath)
+                    {
+                        foreach (TreeViewItem item in items)
+                        {
+                            string currentPath = string.IsNullOrEmpty(parentPath) ? item.Header.ToString()!: $"{parentPath}/{item.Header}";
+
+                            if (item.Items.Count == 0) // 文件节点
+                            {
+                                try
+                                {
+                                    if (IndexConfig.objects != null && IndexConfig.objects.TryGetValue(currentPath, out var fileInfo))
+                                    {
+                                        string hash = fileInfo.hash!;
+                                        string sourcePath = $"{minecraftPath}\\assets\\objects\\{hash.Substring(0, 2)}\\{hash}";
+                                        string targetPath = System.IO.Path.Combine(outputFolder, currentPath.Replace('/', '\\'));
+
+                                        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(targetPath)!);
+                                        File.Copy(sourcePath, targetPath, true);
+                                    }
+                                }
+                                catch
+                                {
+                                    failedFiles.Add(currentPath);
+                                }
+                            }
+                            else
+                            {
+                                ExportItems(item.Items, currentPath);
+                            }
+                        }
+                    }
+
+                    ExportItems(treeView_Main.Items, "");
+
+                    var doneDialog = new ContentDialog
+                    {
+                        Title = "导出完成",
+                        Content = $"操作完成，所有可导出的文件已导出至 {outputFolder}\n\n其中有 {failedFiles.Count} 个文件导出失败",
+                        PrimaryButtonText = "确定",
+                        SecondaryButtonText = "定位",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+
+                    if (await doneDialog.ShowAsync() == ContentDialogResult.Secondary)
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = outputFolder,
+                            UseShellExecute = true
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ErrorReportBox.Show("发生错误", "导出所有文件时发生错误", ex);
                 }
             });
         }

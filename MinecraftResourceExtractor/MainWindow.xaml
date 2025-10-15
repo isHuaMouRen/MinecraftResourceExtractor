@@ -6,11 +6,10 @@
         xmlns:local="clr-namespace:MinecraftResourceExtractor"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         mc:Ignorable="d"
-        Title="Minecraft散列资源提取器" Height="450" Width="800"
+        Title="Minecraft散列资源提取器" Height="550" Width="850"
         ui:WindowHelper.UseModernWindowStyle="True"
         WindowStartupLocation="CenterScreen"
         Loaded="Window_Loaded" Icon="Assets/icon.ico">
-
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -19,35 +18,35 @@
         </Grid.ColumnDefinitions>
 
         <Label Content=".minecraft文件夹"
-               VerticalAlignment="Top"
-               Width="114"
-               Grid.Column="0"
-               Margin="0,10,5,0" Height="31" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+           VerticalAlignment="Top"
+           Width="114"
+           Grid.Column="0"
+           Margin="0,10,5,0" Height="31" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
 
         <TextBox x:Name="textBox_minecraftPath"
-                 Text="Unknown"
-                 VerticalAlignment="Top"
-                 Grid.Column="1"
-                 Margin="0,10,0,0"
-                 IsReadOnly="True"/>
+             Text="Unknown"
+             VerticalAlignment="Top"
+             Grid.Column="1"
+             Margin="0,10,0,0"
+             IsReadOnly="True"/>
 
         <Button x:Name="button_minecraftPath_Broswer"
-                Content="浏览"
-                VerticalAlignment="Top"
-                Width="75"
-                Grid.Column="2"
-                Margin="5,10,0,0"
-                Click="button_minecraftPath_Broswer_Click"/>
+            Content="浏览"
+            VerticalAlignment="Top"
+            Width="75"
+            Grid.Column="2"
+            Margin="5,10,0,0"
+            Click="button_minecraftPath_Broswer_Click"/>
 
 
         <Border x:Name="border_Main" BorderBrush="#FF666666"
-                BorderThickness="1"
-                CornerRadius="5"
-                Grid.ColumnSpan="3"
-                Margin="0,47,0,0"
-                IsEnabled="False">
+            BorderThickness="1"
+            CornerRadius="5"
+            Grid.ColumnSpan="3"
+            Margin="0,47,0,0"
+            IsEnabled="False">
             <Grid>
-                <TextBox x:Name="textBox_Search" TextWrapping="Wrap" Margin="9,9,0,0" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top" Width="380"/>
+                <TextBox x:Name="textBox_Search" TextWrapping="Wrap" Margin="123,9,0,0" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top" Width="266"/>
                 <Button x:Name="button_Search" Content="搜索" Margin="394,10,0,0" VerticalAlignment="Top" Height="32" Width="88" Click="button_Search_Click"/>
                 <TreeView x:Name="treeView_Main" Margin="10,47,0,10" HorizontalAlignment="Left" Width="472" SelectedItemChanged="treeView_Main_SelectedItemChanged">
                     <TreeViewItem Header="Root1">
@@ -66,11 +65,12 @@
                                 <TextBox x:Name="textBox_Preview" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Visibility="Hidden"/>
                             </Grid>
                         </Border>
-                        <Button x:Name="button_Extractor" Content="导出" Margin="10,285,10,10" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Click="button_Extractor_Click"/>
+                        <Button x:Name="button_Extract" Content="导出" Margin="10,285,10,10" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Click="button_Extractor_Click" IsEnabled="False"/>
 
 
                     </Grid>
                 </Border>
+                <Button x:Name="button_ExtractALL" Content="导出所有" Margin="10,10,0,0" VerticalAlignment="Top" Height="32" Width="108" Click="button_ExtractALL_Click"/>
 
             </Grid>
         </Border>
