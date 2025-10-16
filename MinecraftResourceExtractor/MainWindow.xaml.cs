@@ -33,6 +33,7 @@ using ToolLib.Library.MemoryLib;
 using static MinecraftResourceExtractor.Class.JsonConfig;
 using NAudio.Vorbis;
 using NAudio.Wave;
+using System.Windows.Media.Effects;
 
 namespace MinecraftResourceExtractor
 {
@@ -42,43 +43,6 @@ namespace MinecraftResourceExtractor
     public partial class MainWindow : Window
     {
         #region Func
-        public async void Initialize()
-        {
-            try
-            {
-                //初始化配置文件
-                if (!File.Exists(ConfigPath))
-                {
-                    GlobalConfig = new JsonConfig.Config.Root
-                    {
-                        isFirstUse = true
-                    };
-                    Json.WriteJson(ConfigPath, GlobalConfig);
-                }
-
-                //读配置文件
-                GlobalConfig = Json.ReadJson<JsonConfig.Config.Root>(ConfigPath);
-
-                if (GlobalConfig.isFirstUse)
-                {
-                    GlobalConfig.isFirstUse = false;
-                    Json.WriteJson(ConfigPath, GlobalConfig);
-
-                    var dialog = await new ContentDialog
-                    {
-                        Title = "欢迎",
-                        Content = "欢迎使用 Minecraft散列资源提取器",
-                        PrimaryButtonText = "继续",
-                        DefaultButton = ContentDialogButton.Primary
-                    }.ShowAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                ErrorReportBox.Show("发生错误", "在初始化程序时发生错误", ex);
-            }
-        }
-
         public async Task LoadMinecraftInfo()
         {
             try
@@ -92,7 +56,9 @@ namespace MinecraftResourceExtractor
                 for (int i = 0; i < indexFiles.Length; i++)                
                     indexFileNames[i] = System.IO.Path.GetFileName(indexFiles[i]);
 
+                SetBlur();
                 IndexConfig = Json.ReadJson<JsonConfig.IndexFile.Root>($"{minecraftPath}\\assets\\indexes\\{await IndexSelectorBox.Show(indexFileNames)}");
+                UnSetBlur();
 
                 //添加进tree
                 treeView_Main.Items.Clear();
@@ -210,6 +176,32 @@ namespace MinecraftResourceExtractor
             }
         }
 
+        public void SetBlur()
+        {
+            try
+            {
+                grid_Main.Effect = new BlurEffect
+                {
+                    Radius = 10
+                };
+            }
+            catch (Exception ex)
+            {
+                ErrorReportBox.Show("发生错误", "在给主Grid添加模糊效果时发生错误\n\n通常情况下，你可以忽略此错误，不会造成任何影响", ex);
+            }
+        }
+
+        public void UnSetBlur()
+        {
+            try
+            {
+                grid_Main.Effect = null;
+            }
+            catch (Exception ex)
+            {
+                ErrorReportBox.Show("发生错误", "在给主Grid添加模糊效果时发生错误\n\n通常情况下，你可以忽略此错误，不会造成任何影响", ex);
+            }
+        }
         #endregion
 
         #region Class
@@ -226,7 +218,6 @@ namespace MinecraftResourceExtractor
         public static string OutputPath = $"{RunPath}\\Output";
         public static string minecraftPath = null!;
 
-        public static JsonConfig.Config.Root GlobalConfig = null!;
         public static JsonConfig.IndexFile.Root IndexConfig = null!;
         #endregion
 
@@ -238,7 +229,6 @@ namespace MinecraftResourceExtractor
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Initialize();
         }
 
         private void button_minecraftPath_Broswer_Click(object sender, RoutedEventArgs e)
@@ -333,8 +323,10 @@ namespace MinecraftResourceExtractor
                             SecondaryButtonText = "定位",
                             DefaultButton = ContentDialogButton.Primary
                         };
+                        SetBlur();
                         if (await dialog2.ShowAsync() == ContentDialogResult.Secondary)
                             Process.Start("explorer.exe", $"/select,\"{savePath}\"");
+                        UnSetBlur();
                     }
                 }
                 catch (Exception ex)
@@ -359,8 +351,13 @@ namespace MinecraftResourceExtractor
                         CloseButtonText = "否",
                         DefaultButton = ContentDialogButton.Primary
                     };
+                    SetBlur();
                     if (await isSaveDialog.ShowAsync() != ContentDialogResult.Primary)
+                    {
+                        UnSetBlur();
                         return;
+                    }
+                    UnSetBlur();
 
                     // 选择输出目录
                     var dialog = new OpenFolderDialog { Title = "选择导出位置" };
@@ -414,6 +411,7 @@ namespace MinecraftResourceExtractor
                         DefaultButton = ContentDialogButton.Primary
                     };
 
+                    SetBlur();
                     if (await doneDialog.ShowAsync() == ContentDialogResult.Secondary)
                     {
                         Process.Start(new ProcessStartInfo
@@ -422,6 +420,7 @@ namespace MinecraftResourceExtractor
                             UseShellExecute = true
                         });
                     }
+                    UnSetBlur();
                 }
                 catch (Exception ex)
                 {
